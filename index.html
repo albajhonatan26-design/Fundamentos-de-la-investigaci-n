@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fundamentos de la Investigación - SENA</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ENCABEZADO */
+        header {
+            background: #1e293b;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .badge-sena {
+            background-color: #39A900;
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 0.3rem 0.6rem;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            background: #334155;
+            color: #f8fafc;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #475569;
+        }
+
+        /* CONTENEDOR PRINCIPAL DEL CANVAS */
+        main {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #1e293b 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        /* PANEL DE INFORMACIÓN INTERACTIVO */
+        .info-panel {
+            position: absolute;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            width: 320px;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid #475569;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            display: none;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .info-panel h3 {
+            font-size: 0.85rem;
+            color: #38bdf8;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-panel h4 {
+            font-size: 1rem;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-panel p {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <span class="badge-sena">SENA</span>
+            <h1>Fundamentos de la Investigación</h1>
+        </div>
+        <div class="controls">
+            <button class="btn" onclick="resetView()">Centrar Vista</button>
+        </div>
+    </header>
+
+    <main id="canvasContainer">
+        <canvas id="mapCanvas"></canvas>
+
+        <div id="infoPanel" class="info-panel">
+            <h3 id="panelCategory">Categoría</h3>
+            <h4 id="panelTitle">Concepto</h4>
+            <p id="panelDesc">Haz clic en cualquier nodo para explorar su descripción metodológica.</p>
+        </div>
+    </main>
+
+    <script>
+        const canvas = document.getElementById('mapCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvasContainer');
+
+        function resizeCanvas() {
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            drawMap();
+        }
+
+        // Estructura de Datos Basada en la Guía AA1
+        const mapData = {
+            id: 'root',
+            title: "FUNDAMENTOS DE LA\nINVESTIGACIÓN",
+            type: 'root',
+            children: [
+                {
+                    title: "1. Etapas de la\nInvestigación",
+                    link: "se divide en",
+                    color: "#0284c7",
+                    items: [
+                        { name: "Preparación", desc: "Delimitación del tema, revisión de información previa y diseño teórico." },
+                        { name: "Ejecución", desc: "Aplicación de métodos e instrumentos de recolección de información." },
+                        { name: "Procesamiento", desc: "Cuantificación, cualificación, interpretación y valoración de datos." },
+                        { name: "Redacción de Informes", desc: "Documento final breve y preciso con los resultados del proyecto." }
+                    ]
+                },
+                {
+                    title: "2. Enfoques\nInvestigativos",
+                    link: "se aborda mediante",
+                    color: "#0d9488",
+                    items: [
+                        { name: "Cuantitativo", desc: "Mide y cuantifica a partir de herramientas estadísticas y matemáticas." },
+                        { name: "Cualitativo", desc: "Interpreta y describe fenómenos a partir de sus cualidades y contexto." },
+                        { name: "Mixto", desc: "Mezcla e integra la investigación cuantitativa y cualitativa." }
+                    ]
+                },
+                {
+                    title: "3. Niveles de\nProfundidad",
+                    link: "determina su alcance en",
+                    color: "#9333ea",
+                    items: [
+                        { name: "Exploratorio", desc: "Observa, rastrea, pregunta, indaga y compara temas nuevos." },
+                        { name: "Descriptivo", desc: "Describe los hechos a partir de la observación sistemática." },
+                        { name: "Analítico", desc: "Estudia minuciosamente los hechos para establecer teorías." },
+                        { name: "Explicativo", desc: "Explica detalladamente cada variable mediante métodos rigurosos." },
+                        { name: "Interpretativo / Argumentativo", desc: "Contrasta hipótesis, argumenta desde la teoría y demuestra postulados." }
+                    ]
+                },
+                {
+                    title: "4. Métodos de\nInvestigación",
+                    link: "utiliza procedimientos como",
+                    color: "#4f46e5",
+                    items: [
+                        { name: "Científico / Experimental", desc: "Desarrollo lógico, control de variables, contraste de hipótesis y conclusiones." },
+                        { name: "Estadístico / Teórico", desc: "Procesamiento empírico de datos y determinación de muestras." },
+                        { name: "Etnográfico / Histórico", desc: "Estudio del sujeto en su contexto cultural y trayectoria de eventos." },
+                        { name: "Hermenéutico / Fenomenológico", desc: "Interpretación social, fenómenos y reflexión sobre experiencias vividas." },
+                        { name: "IAP (Acción Participante)", desc: "Rol activo del investigador que contribuye a transformar su entorno." }
+                    ]
+                },
+                {
+                    title: "5. Componentes\ndel Proyecto",
+                    link: "se estructura con",
+                    color: "#d97706",
+                    items: [
+                        { name: "Pregunta de Investigación", desc: "Delimita el tema, el alcance, el problema, espacio, tiempo y población." },
+                        { name: "Objetivo General", desc: "Fin último que inicia con verbo infinitivo y responde a la pregunta." },
+                        { name: "Objetivos Específicos", desc: "Acciones medibles (3 a 4) que conducen al logro del objetivo general." },
+                        { name: "Hipótesis", desc: "Explicación o respuesta tentativa que requiere ser probada en la ejecución." },
+                        { name: "Marco Teórico", desc: "Sustento conceptual derivado de fuentes confiables, libros y bases de datos." }
+                    ]
+                },
+                {
+                    title: "6. Técnicas e\nInstrumentos",
+                    link: "recolecta datos mediante",
+                    color: "#059669",
+                    items: [
+                        { name: "Cuantitativas", desc: "Encuestas, tests y observaciones basadas en indicadores medibles." },
+                        { name: "Cualitativas", desc: "Entrevistas, testimonios, historias de vida, diarios de campo, talleres y conversatorios." },
+                        { name: "Mixtas", desc: "Combinación armónica de instrumentos cuantitativos y cualitativos." }
+                    ]
+                },
+                {
+                    title: "7. Universo y\nMuestra",
+                    link: "delimita la población en",
+                    color: "#e11d48",
+                    items: [
+                        { name: "Universo Finito", desc: "Conjunto de elementos que se pueden contar o medir totalmente." },
+                        { name: "Universo Infinito", desc: "Población ilimitada o incalculable cuantitativamente." },
+                        { name: "Muestra Estadística", desc: "Subgrupo representativo calculado mediante fórmulas estadísticas." }
+                    ]
+                },
+                {
+                    title: "8. Fuentes e\nInformación SENA",
+                    link: "se fundamenta en",
+                    color: "#0284c7",
+                    items: [
+                        { name: "Fuentes Primarias", desc: "Documentos directos no editados (testimonios, cartas, archivos originales)." },
+                        { name: "Fuentes Secundarias", desc: "Textos analizados, interpretados o evaluados por otros investigadores." },
+                        { name: "Recursos SENA & Académicos", desc: "Catálogo Bibliográfico, Bases de Datos, Repositorio, Portal de Revistas SENA y Google Académico." }
+                    ]
+                }
+            ]
+        };
+
+        let transform = { x: canvas.width / 2 || 600, y: 320, scale: 0.85 };
+        let isDragging = false;
+        let startPan = { x: 0, y: 0 };
+        let interactiveNodes = [];
+
+        function drawMap() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(transform.x, transform.y);
+            ctx.scale(transform.scale, transform.scale);
+
+            interactiveNodes = [];
+
+            // Nodo Central
+            const rootX = 0;
+            const rootY = -220;
+            drawBox(rootX, rootY, 250, 60, "FUNDAMENTOS DE LA\nINVESTIGACIÓN", "#39A900", "#ffffff", true);
+            interactiveNodes.push({ x: rootX, y: rootY, w: 250, h: 60, title: "Fundamentos de la Investigación", desc: "Base metodológica para la creación, ideación y solución sistemática de problemas.", cat: "Concepto Central" });
+
+            // Ramas y Subnodos
+            const startX = -770;
+            const gapX = 220;
+
+            mapData.children.forEach((child, index) => {
+                const childX = startX + (index * gapX);
+                const childY = -60;
+
+                drawLineWithLabel(rootX, rootY + 30, childX, childY - 30, child.link, child.color);
+
+                drawBox(childX, childY, 180, 50, child.title, child.color, "#ffffff");
+                interactiveNodes.push({ x: childX, y: childY, w: 180, h: 50, title: child.title.replace('\n', ' '), desc: "Categoría metodológica principal del mapa conceptual.", cat: "Estructura del Mapa" });
+
+                child.items.forEach((item, itemIdx) => {
+                    const itemY = childY + 90 + (itemIdx * 55);
+                    
+                    drawLine(childX, (itemIdx === 0 ? childY + 25 : childY + 90 + ((itemIdx-1)*55) + 20), childX, itemY - 20, child.color);
+
+                    drawBox(childX, itemY, 175, 40, item.name, "#1e293b", "#cbd5e1", false, child.color);
+                    interactiveNodes.push({ x: childX, y: itemY, w: 175, h: 40, title: item.name, desc: item.desc, cat: child.title.replace('\n', ' ') });
+                });
+            });
+
+            ctx.restore();
+        }
+
+        function drawBox(x, y, w, h, text, bgColor, textColor, isBold = false, borderColor = null) {
+            ctx.beginPath();
+            ctx.roundRect(x - w/2, y - h/2, w, h, 8);
+            ctx.fillStyle = bgColor;
+            ctx.fill();
+            
+            if (borderColor) {
+                ctx.strokeStyle = borderColor;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = textColor;
+            ctx.font = `${isBold ? 'bold ' : ''}11px 'Segoe UI', sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const lines = text.split('\n');
+            if (lines.length === 1) {
+                ctx.fillText(text, x, y);
+            } else {
+                ctx.fillText(lines[0], x, y - 7);
+                ctx.fillText(lines[1], x, y + 7);
+            }
+        }
+
+        function drawLine(x1, y1, x2, y2, color) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function drawLineWithLabel(x1, y1, x2, y2, label, color) {
+            drawLine(x1, y1, x2, y2, color);
+
+            const midX = (x1 + x2) / 2;
+            const midY = (y1 + y2) / 2;
+
+            ctx.font = "italic 9px 'Segoe UI', sans-serif";
+            const textWidth = ctx.measureText(label).width;
+
+            ctx.fillStyle = "#0f172a";
+            ctx.fillRect(midX - textWidth/2 - 4, midY - 8, textWidth + 8, 16);
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(midX - textWidth/2 - 4, midY - 8, textWidth + 8, 16);
+
+            ctx.fillStyle = "#94a3b8";
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, midX, midY);
+        }
+
+        // Interacción con Ratón
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startPan = { x: e.clientX - transform.x, y: e.clientY - transform.y };
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                transform.x = e.clientX - startPan.x;
+                transform.y = e.clientY - startPan.y;
+                drawMap();
+            }
+        });
+
+        window.addEventListener('mouseup', () => isDragging = false);
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+            transform.scale *= zoomFactor;
+            transform.scale = Math.max(0.4, Math.min(transform.scale, 2.0));
+            drawMap();
+        });
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = (e.clientX - rect.left - transform.x) / transform.scale;
+            const mouseY = (e.clientY - rect.top - transform.y) / transform.scale;
+
+            const clicked = interactiveNodes.find(node => 
+                mouseX >= node.x - node.w/2 && mouseX <= node.x + node.w/2 &&
+                mouseY >= node.y - node.h/2 && mouseY <= node.y + node.h/2
+            );
+
+            const panel = document.getElementById('infoPanel');
+            if (clicked) {
+                document.getElementById('panelCategory').innerText = clicked.cat;
+                document.getElementById('panelTitle').innerText = clicked.title;
+                document.getElementById('panelDesc').innerText = clicked.desc;
+                panel.style.display = 'block';
+            }
+        });
+
+        function resetView() {
+            transform = { x: canvas.width / 2, y: 320, scale: 0.85 };
+            drawMap();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+    </script>
+</body>
+</html>
